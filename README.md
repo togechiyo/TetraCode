@@ -1,11 +1,10 @@
 # TetraCode
 
- Minimal Web Game Sample
+Minimal Web Game Sample
 
 **Babylon.js × Tailwind CSS × sql.js × htmx**  
-たった1枚のHTMLで、ミニゲーム＋ローカルログ記録を実現するサンプルです。
+1枚のHTMLで、ミニゲーム＋ローカルログ記録を実現するサンプルです。
 
-![](./screenshot.png) <!-- スクショ画像を置く場合 -->
 
 ## TetraCodeとは
 
@@ -29,8 +28,7 @@
 ## 構成
 
 ```txt
-.
-├── index.html     # 全部入りの単一ファイル
+ index.html     # 全部入りの単一ファイル
 ```
 
 ## 開発メモ
@@ -39,11 +37,6 @@
 - 操作はすべてローカルで完結しており、外部にデータは送信しません
 - ログは `sql.js` を用いてブラウザ上のSQLite風DBに保存されます
 
-## 未来の展望
-
-- 自作GUI、エフェクト、サウンド対応
-- ハイスコア制やアセット差し替えなど
-- 小規模イベント・展示向けの応用
 
 ## ライセンス
 
