@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TetraCode Sample</title>
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.6.2/dist/sql-wasm.js"></script>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>html,body{margin:0;padding:0;height:100%;}</style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-between min-h-screen p-4">
+  <h1 class="text-2xl font-bold my-2">TetraCode</h1>
+  <canvas id="renderCanvas" class="bg-black" style="width:90vmin;height:90vmin;"></canvas>
+
+  <!-- コントローラー -->
+  <div class="w-full flex justify-between mt-4">
+    <div class="flex flex-col gap-2">
+      <button onclick="logAndMove('up')" class="p-2 bg-blue-600 rounded">↑</button>
+      <div class="flex gap-2">
+        <button onclick="logAndMove('left')" class="p-2 bg-blue-600 rounded">←</button>
+        <button onclick="logAndMove('down')" class="p-2 bg-blue-600 rounded">↓</button>
+        <button onclick="logAndMove('right')" class="p-2 bg-blue-600 rounded">→</button>
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <button onclick="logAndMove('A')" class="p-2 bg-green-600 rounded">A</button>
+      <button onclick="logAndMove('B')" class="p-2 bg-red-600 rounded">B</button>
+    </div>
+  </div>
+
+  <!-- ログテーブル -->
+  <div class="w-full max-w-md mt-4 bg-gray-800 p-2 rounded">
+    <h2 class="text-sm mb-2 font-semibold">操作ログ</h2>
+    <table class="w-full text-sm">
+      <thead><tr><th class="text-left">時刻</th><th class="text-left">操作</th></tr></thead>
+      <tbody id="logTable"></tbody>
+    </table>
+  </div>
+
+<script>
+  let canvas = document.getElementById("renderCanvas");
+  let engine = new BABYLON.Engine(canvas, true);
+  let scene = new BABYLON.Scene(engine);
+
+  let camera = new BABYLON.ArcRotateCamera("camera", Math.PI/2, Math.PI/3, 10, BABYLON.Vector3.Zero(), scene);
+  camera.attachControl(canvas, true);
+  let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+
+  let tetra = BABYLON.MeshBuilder.CreatePolyhedron("tetra", {type:0, size:1}, scene);
+  tetra.position.y = 1;
+
+  let ground = BABYLON.MeshBuilder.CreateGround("ground", {width:10, height:10}, scene);
+  let gridMat = new BABYLON.GridMaterial("grid", scene);
+  gridMat.majorUnitFrequency = 1;
+  gridMat.gridRatio = 1;
+  gridMat.backFaceCulling = false;
+  gridMat.mainColor = new BABYLON.Color3(1,1,1);
+  gridMat.lineColor = new BABYLON.Color3(0.5,0.5,0.5);
+  gridMat.opacity = 0.95;
+  ground.material = gridMat;
+
+  engine.runRenderLoop(() => scene.render());
+
+  // SQLite 初期化
+  let db;
+  initSqlJs().then(SQL => {
+    db = new SQL.Database();
+    db.run("CREATE TABLE logs (timestamp TEXT, action TEXT);");
+  });
+
+  function logAndMove(action) {
+    let ts = new Date().toISOString();
+    db.run("INSERT INTO logs VALUES (?, ?);", [ts, action]);
+    renderTable();
+
+    // アクションに応じた動作
+    if (action === "up") tetra.position.z -= 0.5;
+    if (action === "down") tetra.position.z += 0.5;
+    if (action === "left") tetra.position.x -= 0.5;
+    if (action === "right") tetra.position.x += 0.5;
+    if (action === "A") tetra.position.y += 1;
+    if (action === "B") tetra.position.y = Math.max(1, tetra.position.y - 1);
+  }
+
+  function renderTable() {
+    let result = db.exec("SELECT * FROM logs ORDER BY rowid DESC LIMIT 5;");
+    let html = "";
+    if (result[0]) {
+      for (let row of result[0].values) {
+        html += `<tr><td>${row[0].slice(11,19)}</td><td>${row[1]}</td></tr>`;
+      }
+    }
+    document.getElementById("logTable").innerHTML = html;
+  }
+</script>
+</body>
+</html>
